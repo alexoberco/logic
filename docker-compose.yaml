@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: baseTaller
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: always
+
+  adminer:
+    image: adminer
+    ports:
+      - "8080:8080"
+    restart: always
+
+volumes:
+  pgdata:
