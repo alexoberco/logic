@@ -12,7 +12,7 @@ services:
     restart: always
 
   rabbitmq:
-    image: rabbitmq:latest
+    image: rabbitmq:management
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest

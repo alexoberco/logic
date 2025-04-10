@@ -4,8 +4,8 @@ import io.quarkus.runtime.annotations.RegisterForReflection
 
 @RegisterForReflection
 data class OrderEvent(
-    val purchaseId: Long,
-    val productName: String,
-    val quantity: Int,
-    val userEmail: String
+    val purchaseId: Long = 0,
+    val productName: String = "",
+    val quantity: Int = 0,
+    val userEmail: String = ""
 )
