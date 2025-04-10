@@ -1,28 +1,29 @@
-package co.edu.javeriana.arqui.proyecto.resource
+package co.edu.javeriana.arqui.resources
 
-import co.edu.javeriana.arqui.proyecto.model.Order
-import co.edu.javeriana.arqui.proyecto.service.OrderService
+import co.edu.javeriana.arqui.model.Product
+import co.edu.javeriana.arqui.model.Purchase
+import co.edu.javeriana.arqui.repository.ProductRepository
+import co.edu.javeriana.arqui.service.OrderRequest
+import co.edu.javeriana.arqui.service.OrderService
 import jakarta.inject.Inject
 import jakarta.ws.rs.*
 import jakarta.ws.rs.core.MediaType
-import jakarta.ws.rs.core.Response
 
-@Path("/orders")
+@Path("/api")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-class OrderResource {
-
-    @Inject
-    lateinit var orderService: OrderService
+class OrderResource @Inject constructor(
+    private val service: OrderService,
+    private val productRepo: ProductRepository
+) {
 
     @GET
-    fun listOrders(): List<Order> {
-        return orderService.listOrders()
-    }
+    @Path("/products")
+    fun listProducts(): List<Product> =
+        productRepo.list("status", "available")
 
     @POST
-    fun createOrder(orderRequest: Order): Response {
-        val order = orderService.createOrder(orderRequest)
-        return Response.status(Response.Status.CREATED).entity(order).build()
-    }
+    @Path("/orders")
+    fun createOrder(request: OrderRequest): Purchase =
+        service.placeOrder(request)
 }

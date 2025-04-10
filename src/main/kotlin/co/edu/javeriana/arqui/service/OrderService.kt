@@ -1,69 +1,51 @@
-package co.edu.javeriana.arqui.proyecto.service
+package co.edu.javeriana.arqui.service
 
-import co.edu.javeriana.arqui.proyecto.model.Order
-import co.edu.javeriana.arqui.proyecto.model.Product
-import io.smallrye.reactive.messaging.annotations.Channel
+import co.edu.javeriana.arqui.messaging.OrderEvent
+import co.edu.javeriana.arqui.messaging.OrderEmitter
+import co.edu.javeriana.arqui.model.Purchase
+import co.edu.javeriana.arqui.repository.ProductRepository
+import co.edu.javeriana.arqui.repository.PurchaseRepository
 import jakarta.enterprise.context.ApplicationScoped
-import jakarta.inject.Inject
-import jakarta.persistence.EntityManager
 import jakarta.transaction.Transactional
-import jakarta.json.bind.Jsonb
-import jakarta.json.bind.JsonbBuilder
-import java.util.logging.Logger
+import jakarta.ws.rs.BadRequestException
 
 @ApplicationScoped
-class OrderService {
-
-    @Inject
-    lateinit var em: EntityManager
-
-    @Inject
-    lateinit var mailService: MailService
-
-    // Inyectamos el canal de salida de RabbitMQ como Emitter<String>
-    @Inject
-    @Channel("quote-requests") Emitter<String> quoteRequestEmitter;
-
-
-    private val logger = Logger.getLogger(OrderService::class.java.name)
-
-    fun listOrders(): List<Order> {
-        return em.createQuery("SELECT o FROM Order o", Order::class.java).resultList
-    }
+class OrderService(
+    private val productRepo: ProductRepository,
+    private val purchaseRepo: PurchaseRepository,
+    private val emitter: OrderEmitter
+) {
 
     @Transactional
-    fun createOrder(orderRequest: Order): Order {
-        // Buscar el producto asociado
-        val product = em.find(Product::class.java, orderRequest.productId)
-            ?: throw RuntimeException("Producto no encontrado")
-        if (product.stock == null || product.stock!! <= 0) {
-            throw RuntimeException("Producto sin stock")
+    fun placeOrder(request: OrderRequest): Purchase {
+        val product = productRepo.findById(request.productId)
+            ?: throw BadRequestException("Producto no encontrado")
+        if (product.stock < request.quantity) {
+            throw BadRequestException("Stock insuficiente")
         }
 
-        // Actualizar stock y estado
-        product.stock = product.stock!! - 1
-        if (product.stock == 0) {
-            product.status = "out of stock"
-        }
-        em.merge(product)
+        // Actualizar stock
+        product.stock -= request.quantity
+        product.status = if (product.stock > 0) "available" else "out_of_stock"
+        productRepo.persist(product)
 
-        // Establecer la fecha del pedido si no se ha proporcionado
-        if (orderRequest.orderDate == null) {
-            orderRequest.orderDate = java.time.LocalDateTime.now()
-        }
-        em.persist(orderRequest)
+        // Registrar compra
+        val purchase = Purchase(
+            productId = product.id!!,
+            quantity = request.quantity,
+            userEmail = request.userEmail
+        )
+        purchaseRepo.persist(purchase)
 
-        // Convertir el objeto Order a JSON usando JSON-B
-        val jsonb: Jsonb = JsonbBuilder.create()
-        val jsonOrder = jsonb.toJson(orderRequest)
+        // Enviar evento asíncrono
+        val event = OrderEvent(
+            purchaseId = purchase.id!!,
+            productName = product.name,
+            quantity = request.quantity,
+            userEmail = request.userEmail
+        )
+        emitter.send(event)
 
-        // Enviar el mensaje a RabbitMQ a través del canal "quote-requests"
-        quoteRequestEmitter.send(jsonOrder)
-        logger.info("Orden enviada a RabbitMQ, id: ${orderRequest.id}")
-
-        // Enviar correo de confirmación
-        mailService.sendOrderConfirmation(orderRequest.userEmail ?: "", orderRequest)
-
-        return orderRequest
+        return purchase
     }
 }

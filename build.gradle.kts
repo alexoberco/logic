@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "2.0.21"
     kotlin("plugin.allopen") version "2.0.21"
+    kotlin("plugin.jpa") version "1.8.22"
     id("io.quarkus")
 }
 
@@ -14,6 +15,8 @@ val quarkusPlatformArtifactId: String by project
 val quarkusPlatformVersion: String by project
 
 dependencies {
+    implementation("io.quarkus:quarkus-rest-kotlin")
+    implementation("io.quarkus:quarkus-hibernate-orm-panache-kotlin")
     implementation("io.quarkus:quarkus-messaging-rabbitmq")
     implementation("io.quarkus:quarkus-mailer")
     implementation("io.quarkus:quarkus-qute")
