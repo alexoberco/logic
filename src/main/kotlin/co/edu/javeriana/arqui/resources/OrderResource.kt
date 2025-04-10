@@ -26,4 +26,5 @@ class OrderResource @Inject constructor(
     @Path("/orders")
     fun createOrder(request: OrderRequest): Purchase =
         service.placeOrder(request)
+
 }

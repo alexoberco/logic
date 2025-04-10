@@ -23,7 +23,7 @@ class EmailConsumer {
 
     private val jsonb: Jsonb = JsonbBuilder.create()
 
-    @Incoming("order-confirmations")
+    @Incoming("order-confirmations-in")
     fun process(message: String) {
         val event = jsonb.fromJson(message, OrderEvent::class.java)
         val body: TemplateInstance = template.data("event", event)

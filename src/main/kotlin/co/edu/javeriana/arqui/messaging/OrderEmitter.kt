@@ -10,7 +10,7 @@ import jakarta.json.bind.JsonbBuilder
 @ApplicationScoped
 class OrderEmitter {
     @Inject
-    @Channel("order-confirmations")
+    @Channel("order-confirmations-out")
     lateinit var emitter: Emitter<String>
 
     private val jsonb: Jsonb = JsonbBuilder.create()
