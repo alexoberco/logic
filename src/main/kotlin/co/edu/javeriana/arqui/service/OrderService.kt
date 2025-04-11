@@ -57,12 +57,12 @@ class OrderService(
 
 
         // Enviar evento asíncrono
-        val event = OrderEvent(
-            purchaseId = purchase.id!!,
-            productName = product.name,
-            quantity = request.quantity,
-            userEmail = request.userEmail
-        )
+        val event = OrderEvent().apply {
+            this.purchaseId = purchase.id!!
+            this.productName = product.name
+            this.quantity = request.quantity
+            this.userEmail = request.userEmail
+        }
         cdiEvent.fire(event)
         LOG.debug("OrderEvent enviado: {}", event)
 
