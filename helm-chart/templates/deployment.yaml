@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "quarkus-app.fullname" . }}
+  labels:
+    app: {{ include "quarkus-app.name" . }}
+    {{- with .Values.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "quarkus-app.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "quarkus-app.name" . }}
+        {{- with .Values.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      containers:
+        - name: {{ include "quarkus-app.name" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          env:
+            - name: QUARKUS_DATASOURCE_JDBC_URL
+              value: {{ .Values.env.QUARKUS_DATASOURCE_JDBC_URL | quote }}
+            - name: QUARKUS_DATASOURCE_USERNAME
+              value: {{ .Values.env.QUARKUS_DATASOURCE_USERNAME | quote }}
+            - name: QUARKUS_DATASOURCE_PASSWORD
+              value: {{ .Values.env.QUARKUS_DATASOURCE_PASSWORD | quote }}
+            - name: QUARKUS_RABBITMQ_HOST
+              value: {{ .Values.env.QUARKUS_RABBITMQ_HOST | quote }}
+            - name: QUARKUS_RABBITMQ_PORT
+              value: {{ .Values.env.QUARKUS_RABBITMQ_PORT | quote }}

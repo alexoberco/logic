@@ -1,40 +1,35 @@
-  apiVersion: apps/v1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    kompose.cmd: kompose convert -f docker-compose.yaml -o k8s/
-    kompose.version: 1.35.0 (9532ceef3)
-  labels:
-    io.kompose.service: quarkus-app
   name: quarkus-app
+  namespace: postgress
+  labels:
+    app: quarkus-app
 spec:
   replicas: 1
   selector:
     matchLabels:
-      io.kompose.service: quarkus-app
+      app: quarkus-app
   template:
     metadata:
-      annotations:
-        kompose.cmd: kompose convert -f docker-compose.yaml -o k8s/
-        kompose.version: 1.35.0 (9532ceef3)
       labels:
-        io.kompose.service: quarkus-app
+        app: quarkus-app
     spec:
       containers:
-        - env:
-            - name: QUARKUS_DATASOURCE_JDBC_URL
-              value: jdbc:postgresql://db:5432/baseTaller
-            - name: QUARKUS_DATASOURCE_PASSWORD
-              value: admin
-            - name: QUARKUS_DATASOURCE_USERNAME
-              value: admin
-            - name: QUARKUS_RABBITMQ_HOST
-              value: rabbitmq
-            - name: QUARKUS_RABBITMQ_PORT
-              value: "5672"
-          image: order-service:latest
-          name: quarkus-app
+        - name: quarkus-app
+          image: alexoberco/taller-quarkus-jvm:latest
           ports:
             - containerPort: 8080
               protocol: TCP
+          env:
+            - name: QUARKUS_DATASOURCE_JDBC_URL
+              value: jdbc:postgresql://my-postgres-postgresql:5432/baseTaller
+            - name: QUARKUS_DATASOURCE_USERNAME
+              value: admin
+            - name: QUARKUS_DATASOURCE_PASSWORD
+              value: admin
+            - name: QUARKUS_RABBITMQ_HOST
+              value: my-rabbitmq
+            - name: QUARKUS_RABBITMQ_PORT
+              value: "5672"
       restartPolicy: Always

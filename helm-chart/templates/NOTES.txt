@@ -1,0 +1,5 @@
+1. Your application has been deployed as a Deployment named {{ include "quarkus-app.fullname" . }}.
+2. You can access the service via port-forward using:
+   kubectl port-forward svc/{{ include "quarkus-app.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
+3. To uninstall the chart, run:
+   helm uninstall {{ .Release.Name }} --namespace {{ .Release.Namespace }}
