@@ -59,8 +59,22 @@ helm upgrade --install my-rabbitmq bitnami/rabbitmq \
 echo "=== Esperando a que RabbitMQ esté listo, puede tardar unos minutos ==="
 kubectl wait --for=condition=Ready pod -l "app.kubernetes.io/name=rabbitmq" -n postgress --timeout=300s || error_exit "RabbitMQ no está listo."
 
-echo "=== Aplicando manifiestos de Kubernetes (lógica de la aplicación) ==="
-kubectl apply -f k8s/ || error_exit "Error aplicando YAMLs en k8s/."
+echo "=== Opción de instalación de la capa lógica ==="
+# Se pregunta si se desea instalar la aplicación usando el Helm Chart
+read -t 5 -p "¿Deseas instalar la capa lógica mediante el Helm Chart? [y/N]: " helmAnswer || helmAnswer="n"
+echo ""
+
+if [[ "$helmAnswer" =~ ^[Yy]$ ]]; then
+    echo "Instalando la capa lógica utilizando el Helm Chart..."
+    # Cambiamos al directorio del Helm Chart (asumiendo que se encuentra en ./helm-chart)
+    cd helm-chart || error_exit "No se pudo acceder a la carpeta helm-chart."
+    # Instalar el chart; puedes ajustar el nombre de release y los parámetros según tus necesidades
+    helm upgrade --install my-quarkus-app . --namespace postgress --create-namespace || error_exit "Error instalando el Helm Chart de la capa lógica."
+    cd ..
+else
+    echo "Instalando la capa lógica utilizando los YAMLs (instalación normal)..."
+    kubectl apply -f k8s/ || error_exit "Error aplicando YAMLs en k8s/."
+fi
 
 echo "=== Esperando a que el Deployment de Quarkus esté listo ==="
 kubectl rollout status deployment/quarkus-app -n postgress || error_exit "Rollout del Deployment de Quarkus falló."
