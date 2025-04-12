@@ -56,9 +56,29 @@ helm upgrade --install my-rabbitmq bitnami/rabbitmq \
     --set auth.username=guest \
     --set auth.password=guest || error_exit "Error instalando RabbitMQ."
 
-echo "=== Esperando a que RabbitMQ esté listo, puede tardar unos minutos ==="
-kubectl wait --for=condition=Ready pod -l "app.kubernetes.io/name=rabbitmq" -n postgress --timeout=300s || error_exit "RabbitMQ no está listo."
+echo "=== Esperando a que RabbitMQ esté presente ==="
 
+# Definir un timeout e intervalo de chequeo
+timeout=300
+interval=10
+elapsed=0
+
+while true; do
+  # Obtener la cantidad de pods con la etiqueta "app.kubernetes.io/name=rabbitmq"
+  podCount=$(kubectl get pods -n postgress -l "app.kubernetes.io/name=rabbitmq" --no-headers 2>/dev/null | wc -l)
+  if [ "$podCount" -gt "0" ]; then
+    echo "Pod de RabbitMQ detectado. Esperando a que esté listo..."
+    break
+  fi
+  sleep $interval
+  elapsed=$(( elapsed + interval ))
+  if [ $elapsed -ge $timeout ]; then
+    error_exit "No se detectaron pods de RabbitMQ en $timeout segundos."
+  fi
+done
+
+# Ahora espera a que los pods estén listos
+kubectl wait --for=condition=Ready pod -l "app.kubernetes.io/name=rabbitmq" -n postgress --timeout=300s || error_exit "RabbitMQ no está listo."
 echo "=== Opción de instalación de la capa lógica ==="
 # Se pregunta si se desea instalar la aplicación usando el Helm Chart
 read -t 5 -p "¿Deseas instalar la capa lógica mediante el Helm Chart? [y/N]: " helmAnswer || helmAnswer="n"
