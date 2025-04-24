@@ -26,12 +26,37 @@ services:
           echo "Waiting for postgres..."
           sleep 1
         done
-        
-        # Inserciones idempotentes: solo se crean si NO existen
-        psql -h db -U admin -d baseTaller -c "INSERT INTO product(name, stock, status) SELECT 'Producto 1',100,'available' WHERE NOT EXISTS (SELECT 1 FROM product WHERE name='Producto 1');"
-        psql -h db -U admin -d baseTaller -c "INSERT INTO product(name, stock, status) SELECT 'Producto 2',100,'available' WHERE NOT EXISTS (SELECT 1 FROM product WHERE name='Producto 2');"
-        psql -h db -U admin -d baseTaller -c "INSERT INTO product(name, stock, status) SELECT 'Producto 3',100,'available' WHERE NOT EXISTS (SELECT 1 FROM product WHERE name='Producto 3');"
+
+        # Crear tabla product de forma idempotente
+        psql -h db -U admin -d baseTaller <<'EOSQL'
+        CREATE TABLE IF NOT EXISTS product (
+          id     SERIAL PRIMARY KEY,
+          name   TEXT UNIQUE NOT NULL,
+          stock  INTEGER NOT NULL,
+          status VARCHAR(20) NOT NULL
+        );
+
+        -- Inserciones idempotentes: solo se crean si NO existen
+        INSERT INTO product(name, stock, status)
+        SELECT 'Producto 1',100,'available'
+        WHERE NOT EXISTS (
+          SELECT 1 FROM product WHERE name='Producto 1'
+        );
+
+        INSERT INTO product(name, stock, status)
+        SELECT 'Producto 2',100,'available'
+        WHERE NOT EXISTS (
+          SELECT 1 FROM product WHERE name='Producto 2'
+        );
+
+        INSERT INTO product(name, stock, status)
+        SELECT 'Producto 3',100,'available'
+        WHERE NOT EXISTS (
+          SELECT 1 FROM product WHERE name='Producto 3'
+        );
+        EOSQL
     restart: no
+
 
   rabbitmq:
     image: rabbitmq:management
