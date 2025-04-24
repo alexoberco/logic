@@ -68,6 +68,11 @@ services:
       - "15672:15672"   # para la consola de administración web
     restart: always
 
+    networks:
+      default:
+        aliases:
+          - my-rabbitmq
+
 
   quarkus-app:
     build:
